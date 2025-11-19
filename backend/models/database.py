@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, inspect
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, inspect, LargeBinary
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import datetime
@@ -18,8 +18,9 @@ class Videos(Base):
     __tablename__ = "videos"
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String)
-    detected_objects = Column(Text)
-    frame_timestamps = Column(String)
+    detected_objects = Column(Text, nullable=True)
+    frame_timestamps = Column(String, nullable=True)
+    embeddings = Column(LargeBinary, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
 
 
@@ -29,7 +30,7 @@ class Audios(Base):
     filename = Column(String)
     transcriptions = Column(Text)
     timestamps = Column(String)
-    created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
+    created_at = Column(DateTime, default=datetime.datetime.now())
 
 
 # Create tables

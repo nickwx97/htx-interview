@@ -208,3 +208,5 @@ __marimo__/
 
 # Database files
 backend/app.db
+backend/uploads/*
+samples/*

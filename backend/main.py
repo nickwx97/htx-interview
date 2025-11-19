@@ -21,6 +21,7 @@ app.include_router(search_router)
 
 # Create database tables
 from models.database import create_tables
+
 create_tables()
 
 
