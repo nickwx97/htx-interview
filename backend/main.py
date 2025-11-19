@@ -8,6 +8,7 @@ app = FastAPI(
     version="1.0",
 )
 
+# Add routes
 from routers.misc.routes import router as api_router
 from routers.process.routes import router as process_router
 from routers.retrieve.routes import router as retrieve_router
@@ -17,6 +18,10 @@ app.include_router(api_router)
 app.include_router(process_router)
 app.include_router(retrieve_router)
 app.include_router(search_router)
+
+# Create database tables
+from models.database import create_tables
+create_tables()
 
 
 if __name__ == "__main__":
