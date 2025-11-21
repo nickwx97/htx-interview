@@ -1,5 +1,6 @@
 import uvicorn
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 
 app = FastAPI(
@@ -19,9 +20,11 @@ app.include_router(process_router)
 app.include_router(retrieve_router)
 app.include_router(search_router)
 
+# Serve uploaded media and generated assets
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
 # Create database tables
 from models.database import create_tables
-
 create_tables()
 
 
