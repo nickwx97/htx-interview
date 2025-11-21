@@ -5,7 +5,7 @@ services:
       - "8000:8000"
     volumes:
       - ./backend/uploads:/app/uploads
-      - ./backend/app.db:/app/app.db
+      - ./backend/db:/app/db
     restart: unless-stopped
 
   frontend:
