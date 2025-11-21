@@ -1,0 +1,19 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/app.db:/app/app.db
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_BASE=http://host.docker.internal:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
