@@ -25,6 +25,14 @@ class Videos(Base):
     created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
 
 
+class VideoSummaries(Base):
+    __tablename__ = "video_summaries"
+    id = Column(Integer, primary_key=True, index=True)
+    filename = Column(String, index=True)
+    summary = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
+
+
 class Audios(Base):
     __tablename__ = "audios"
     id = Column(Integer, primary_key=True, index=True)

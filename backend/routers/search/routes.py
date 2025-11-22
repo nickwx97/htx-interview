@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
-from models.database import get_db, Videos, Audios
+from models.database import get_db, Videos, Audios, VideoSummaries
 from typing import List, Dict, Any
 import json
 import os
@@ -126,12 +126,20 @@ async def search(
     if not q_norm:
         raise HTTPException(status_code=400, detail="query param 'q' must contain non-space characters")
 
+    # Query videos by filename or detected objects
     video_candidates = db.query(Videos).filter(
         or_(
             Videos.filename.ilike(f"%{q}%"),
             Videos.detected_objects.ilike(f"%{q}%")
         )
     ).all()
+
+    # Load per-video summaries into a dict for snippet assembly and matching
+    try:
+        summary_rows = db.query(VideoSummaries).all()
+        summary_map = {s.filename: s.summary for s in summary_rows}
+    except Exception:
+        summary_map = {}
 
     audio_candidates = db.query(Audios).filter(
         or_(
@@ -154,7 +162,7 @@ async def search(
         return {"count": count, "snippet": snippet, "field": field_name}
 
     for v in video_candidates:
-        combined = " ".join([v.filename or "", v.detected_objects or ""]) 
+        combined = " ".join([v.filename or "", v.detected_objects or "", summary_map.get(v.filename, "") or ""]) 
         info = _score_and_snippet(combined, "video_summary_or_filename")
         if info["count"] > 0:
             video_safe_name = os.path.splitext(v.filename or "")[0]

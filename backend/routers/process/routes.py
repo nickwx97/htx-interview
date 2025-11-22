@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, File, UploadFile
 from sqlalchemy.orm import Session
-from models.database import get_db, Videos, Audios
+from models.database import get_db, Videos, Audios, VideoSummaries
 import logging
 import os
 import shutil
@@ -112,6 +112,7 @@ async def process_video(file: UploadFile = File(...), db: Session = Depends(get_
 
     try:
         created_rows = []
+        summary_text = result.get("summary")
         kf_map = {kf["frame_idx"]: kf for kf in result.get("keyframes", [])}
 
         for frame in result.get("detections", []):
@@ -158,6 +159,7 @@ async def process_video(file: UploadFile = File(...), db: Session = Depends(get_
                     frame_timestamps=frame_timestamp_json,
                     frame_idx=frame_idx,
                     embeddings=embedding_blob,
+                    summary=summary_text,
                 )
                 db.add(video_row)
                 created_rows.append(video_row)
@@ -166,6 +168,19 @@ async def process_video(file: UploadFile = File(...), db: Session = Depends(get_
         for r in created_rows:
             db.refresh(r)
         result["db_ids"] = [r.id for r in created_rows]
+
+        # Persist a single summary row per video filename. Replace any existing summary for the filename.
+        try:
+            if summary_text:
+                # remove existing summaries for this filename
+                db.query(VideoSummaries).filter(VideoSummaries.filename == filename).delete()
+                summary_row = VideoSummaries(filename=filename, summary=summary_text)
+                db.add(summary_row)
+                db.commit()
+                db.refresh(summary_row)
+                result["summary_id"] = summary_row.id
+        except Exception:
+            logger.exception("Failed to persist video summary")
     except Exception:
         logger.exception("Failed to insert video processing result(s) into DB")
         try:

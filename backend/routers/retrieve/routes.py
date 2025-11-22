@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from models.database import Videos, Audios, get_db
+from models.database import Videos, Audios, VideoSummaries, get_db
 import os
 
 router = APIRouter(prefix="", tags=["retrieval"])
@@ -49,6 +49,15 @@ async def retrieve_videos(db: Session = Depends(get_db)):
 
     out = []
     for g in groups.values():
+        # attach a video-level summary if available
+        try:
+            summary_row = db.query(VideoSummaries).filter(VideoSummaries.filename == g.get('filename')).order_by(VideoSummaries.created_at.desc()).first()
+            if summary_row:
+                g['summary'] = summary_row.summary
+            else:
+                g['summary'] = None
+        except Exception:
+            g['summary'] = None
         frame_idxs = set()
         for row in g.get('rows', []):
             if row.get('frame_idx') is not None:
@@ -77,7 +86,7 @@ async def retrieve_videos(db: Session = Depends(get_db)):
     return out
 
 
-@router.get("/audios")
+@router.get("/transcriptions")
 async def retrieve_audios(db: Session = Depends(get_db)):
     rows = db.query(Audios).order_by(Audios.created_at.desc()).all()
     groups = {}

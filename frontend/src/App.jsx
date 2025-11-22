@@ -33,7 +33,7 @@ export default function App() {
             setActiveVideoTab(0);
         } catch (err) { console.error(err); }
         try {
-            const a = await axios.get(`${API_BASE}/audios`);
+            const a = await axios.get(`${API_BASE}/transcriptions`);
             setAudios(a.data);
             setCurrentAudioPage(1);
             setActiveAudioTab(0);
