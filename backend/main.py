@@ -1,6 +1,16 @@
 import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+import os
+
+# Load environment variables from backend/.env if present
+try:
+    from dotenv import load_dotenv
+    env_path = os.path.join(os.path.dirname(__file__), ".env")
+    load_dotenv(dotenv_path=env_path, override=False)
+except Exception:
+    # dotenv not available or failed to load — fall back to OS env
+    pass
 
 
 app = FastAPI(

@@ -338,11 +338,17 @@ def transcribe_audio(audio_path: str, model_name: str = "openai/whisper-tiny") -
         segments = []
         if "chunks" in result:
             for idx, chunk in enumerate(result["chunks"]):
+                # extract confidence/score if available in chunk metadata
+                conf = None
+                if isinstance(chunk, dict):
+                    conf = chunk.get("confidence") or chunk.get("score") or chunk.get("avg_logprob")
+
                 segment = {
                     "id": idx,
                     "start": chunk.get("timestamp", [0, 0])[0] if isinstance(chunk.get("timestamp"), (list, tuple)) else 0,
                     "end": chunk.get("timestamp", [0, 0])[1] if isinstance(chunk.get("timestamp"), (list, tuple)) else 0,
-                    "text": chunk.get("text", "")
+                    "text": chunk.get("text", ""),
+                    "confidence": float(conf) if conf is not None else None,
                 }
                 segments.append(segment)
         else:
@@ -351,7 +357,8 @@ def transcribe_audio(audio_path: str, model_name: str = "openai/whisper-tiny") -
                     "id": 0,
                     "start": 0.0,
                     "end": len(audio_data) / target_sr,
-                    "text": full_text
+                    "text": full_text,
+                    "confidence": None,
                 }
             ]
 
@@ -402,6 +409,7 @@ def serialize_audio_embeddings(segments: List[Dict[str, Any]]) -> bytes:
                 "start": float(seg.get("start", 0)),
                 "end": float(seg.get("end", 0)),
                 "text": str(seg.get("text", "")),
+                "confidence": (float(seg.get("confidence")) if seg.get("confidence") is not None else None),
             }
 
         arrs["_metadata"] = np.array([json.dumps(metadata)], dtype=object)

@@ -46,8 +46,18 @@ async def process_video(file: UploadFile = File(...), db: Session = Depends(get_
             kf_dir = os.path.join(UPLOAD_DIR, f"{video_safe_name}_keyframes")
             os.makedirs(kf_dir, exist_ok=True)
 
+            # Allow sample rate and diff threshold to be configured via environment variables (backend/.env)
+            try:
+                sample_rate = int(os.getenv("VIDEO_SAMPLE_RATE", "5"))
+            except Exception:
+                sample_rate = 5
+            try:
+                diff_thresh = float(os.getenv("VIDEO_DIFF_THRESH", "30.0"))
+            except Exception:
+                diff_thresh = 30.0
+
             keyframes_meta = scene_keyframes(
-                file_path, sample_rate=5, diff_thresh=5.0, output_dir=kf_dir
+                file_path, sample_rate=sample_rate, diff_thresh=diff_thresh, output_dir=kf_dir
             )
             net = load_mobilenet_net()
             detections_by_frame = []
@@ -149,20 +159,19 @@ async def process_video(file: UploadFile = File(...), db: Session = Depends(get_
                         f"Failed to compute image embedding for keyframe {kf_path}"
                     )
 
-            for obj in frame.get("objects", []):
-                detected_object_json = json.dumps(obj)
-                frame_timestamp_json = json.dumps(timestamp)
+                for obj in frame.get("objects", []):
+                    detected_object_json = json.dumps(obj)
+                    frame_timestamp_json = json.dumps(timestamp)
 
-                video_row = Videos(
-                    filename=filename,
-                    detected_objects=detected_object_json,
-                    frame_timestamps=frame_timestamp_json,
-                    frame_idx=frame_idx,
-                    embeddings=embedding_blob,
-                    summary=summary_text,
-                )
-                db.add(video_row)
-                created_rows.append(video_row)
+                    video_row = Videos(
+                        filename=filename,
+                        detected_objects=detected_object_json,
+                        frame_timestamps=frame_timestamp_json,
+                        frame_idx=frame_idx,
+                        embeddings=embedding_blob,
+                    )
+                    db.add(video_row)
+                    created_rows.append(video_row)
 
         db.commit()
         for r in created_rows:
@@ -172,6 +181,8 @@ async def process_video(file: UploadFile = File(...), db: Session = Depends(get_
         # Persist a single summary row per video filename. Replace any existing summary for the filename.
         try:
             if summary_text:
+                if not isinstance(summary_text, str):
+                    summary_text = json.dumps(summary_text)
                 # remove existing summaries for this filename
                 db.query(VideoSummaries).filter(VideoSummaries.filename == filename).delete()
                 summary_row = VideoSummaries(filename=filename, summary=summary_text)
@@ -239,6 +250,7 @@ async def process_audio(file: UploadFile = File(...), db: Session = Depends(get_
             seg_text = seg.get("text", "")
             seg_start = seg.get("start", 0.0)
             seg_end = seg.get("end", 0.0)
+            seg_confidence = seg.get("confidence", None)
             seg_embedding = seg.get("embedding", [])
 
             segment_json = json.dumps(
@@ -259,6 +271,7 @@ async def process_audio(file: UploadFile = File(...), db: Session = Depends(get_
                     "id": seg_id,
                     "start": seg_start,
                     "end": seg_end,
+                    "confidence": (float(seg_confidence) if seg_confidence is not None else None),
                 }
             )
 
@@ -281,6 +294,7 @@ async def process_audio(file: UploadFile = File(...), db: Session = Depends(get_
                 "start": seg["start"],
                 "end": seg["end"],
                 "text": seg["text"],
+                "confidence": seg.get("confidence", None),
             }
             for seg in segments
         ]
