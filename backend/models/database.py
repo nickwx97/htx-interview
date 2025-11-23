@@ -1,6 +1,5 @@
 from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, inspect, LargeBinary
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 import datetime
 
 DATABASE_URL = "sqlite:///./db/app.db"

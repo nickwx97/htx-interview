@@ -28,11 +28,26 @@ export default function AudioCard({ audio, onSimilarText }) {
                             } catch (e) { console.error('Timestamp parse error:', e)/* ignore */ }
                         }
 
+                        // extract confidence if present in timestamps or directly on the row
+                        let confidenceVal = null
+                        try {
+                            let ts = r.timestamps
+                            if (typeof ts === 'string') ts = JSON.parse(ts)
+                            if (ts && typeof ts === 'object') {
+                                if (ts.confidence !== undefined && ts.confidence !== null) confidenceVal = parseFloat(ts.confidence)
+                                else if (ts.conf !== undefined && ts.conf !== null) confidenceVal = parseFloat(ts.conf)
+                            }
+                            if (confidenceVal == null && r.confidence !== undefined) confidenceVal = parseFloat(r.confidence)
+                        } catch (e) { confidenceVal = null }
+
                         return (
                             <div key={r.id} className="audio-row">
                                 <div className="row-meta row-meta-strong">{timeRange}</div>
                                 <div className="row-transcription">
                                     {r.transcriptions}
+                                    {confidenceVal != null && !isNaN(confidenceVal) && (
+                                        <span className="confidence-badge"> {(confidenceVal * 100).toFixed(0)}% </span>
+                                    )}
                                     <button className="row-search-btn ml-8" title="Find similar" onClick={() => onSimilarText && onSimilarText(r.transcriptions)}>🔍</button>
                                 </div>
                             </div>
