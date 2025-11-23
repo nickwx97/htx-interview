@@ -7,6 +7,15 @@ import numpy as np
 import io
 import json
 from typing import Optional
+import threading
+
+# Import the HF `pipeline` at module load and protect pipeline creation with a lock
+try:
+    from transformers import pipeline as hf_pipeline
+except Exception:
+    hf_pipeline = None
+
+_pipeline_lock = threading.Lock()
 
 logger = logging.getLogger("process.utils")
 
@@ -173,6 +182,7 @@ def detect_objects_on_image(net, image: np.ndarray, conf_thresh: float = 0.7, dr
 
 
 _embedding_model = None
+_embedding_lock = threading.Lock()
 
 
 def load_embedding_model():
@@ -180,8 +190,13 @@ def load_embedding_model():
     if _embedding_model is None:
         try:
             from sentence_transformers import SentenceTransformer
+            import torch
 
-            _embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+            with _embedding_lock:
+                if _embedding_model is None:
+                    # pass explicit device to avoid moving module from meta to device later
+                    _embedding_model = SentenceTransformer("all-MiniLM-L6-v2", device=device)
         except Exception:
             logger.exception("Failed to load embedding model; make sure sentence-transformers is installed")
             raise
@@ -317,21 +332,25 @@ def preprocess_audio(audio_path: str, target_sr: int = 16000) -> tuple:
 
 def transcribe_audio(audio_path: str, model_name: str = "openai/whisper-tiny") -> Dict[str, Any]:
     try:
-        from transformers import pipeline
         import torch
 
         device = 0 if torch.cuda.is_available() else -1
 
-        pipe = pipeline(
-            "automatic-speech-recognition",
-            model=model_name,
-            device=device,
-            stride_length_s=(4, 2),
-        )
+        if hf_pipeline is None:
+            raise RuntimeError("transformers.pipeline is not available; ensure 'transformers' is installed and importable")
+
+        # Create the pipeline under a lock to avoid import/model-initialization race conditions
+        with _pipeline_lock:
+            pipe = hf_pipeline(
+                "automatic-speech-recognition",
+                model=model_name,
+                device=device,
+                stride_length_s=(4, 2),
+            )
 
         audio_data, original_sr, target_sr = preprocess_audio(audio_path, target_sr=16000)
 
-        result = pipe(audio_data, return_timestamps=True, language='en')
+        result = pipe(audio_data, return_timestamps=True, language="en")
 
         full_text = result.get("text", "")
 
@@ -462,8 +481,13 @@ def load_image_embedding_model():
     if _image_embedding_model is None:
         try:
             from sentence_transformers import SentenceTransformer
+            import torch
 
-            _image_embedding_model = SentenceTransformer("clip-ViT-B-32")
+            device = "cuda" if torch.cuda.is_available() else "cpu"
+            # protect concurrent initializations
+            with _embedding_lock:
+                if _image_embedding_model is None:
+                    _image_embedding_model = SentenceTransformer("clip-ViT-B-32", device=device)
         except Exception:
             logger.exception("Failed to load image embedding model; ensure sentence-transformers is installed and supports CLIP models")
             raise

@@ -33,6 +33,19 @@ class VideoSummaries(Base):
     created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
 
 
+class ProcessingJobs(Base):
+    __tablename__ = "processing_jobs"
+    id = Column(Integer, primary_key=True, index=True)
+    filename = Column(String, nullable=False)
+    media_type = Column(String, nullable=False)  # 'video' or 'audio'
+    status = Column(String, default="queued")
+    progress = Column(Integer, default=0)
+    attempts = Column(Integer, default=0)
+    result = Column(Text, nullable=True)  # JSON string with result details (e.g., db_ids)
+    error = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.now(datetime.timezone.utc))
+
+
 class Audios(Base):
     __tablename__ = "audios"
     id = Column(Integer, primary_key=True, index=True)
