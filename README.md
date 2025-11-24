@@ -7,7 +7,7 @@ Lightweight prototype for media processing, retrieval and search. The project co
 - `frontend/` — Vite + React UI.
 - `docs/` — architecture diagrams and supporting docs (`architecture.pdf` is here).
 - `samples/` — sample media used by tests (large files not pushed to GitHub, supplement with interview package provided).
-
+ 
 **Brief Overview**
 - Backend: FastAPI app in `backend/main.py` with routers under `backend/routers/`.
 - Processing: helpers in `backend/routers/process/utils.py` perform keyframe extraction, MobileNet-SSD detection, Whisper transcription, and embedding creation (`sentence-transformers`).
@@ -22,6 +22,15 @@ Lightweight prototype for media processing, retrieval and search. The project co
 - Python 3.12.12 (venv/conda), Node.js (v24 LTS) and system libs for audio/video processing (`ffmpeg`, `libsm6`, etc.).
 
 ## Running (recommended: Docker)
+
+**Important: Configure environment**
+
+- ***Copy `.env.example` to `.env` in the project root and update values before running anything.***
+
+```bash
+cp .env.example .env
+# edit `.env` with appropriate values (ports, credentials, feature flags)
+```
 
 The repo includes a `docker-compose.yml` that builds and runs both backend and frontend. From the project root:
 
