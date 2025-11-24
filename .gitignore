@@ -210,5 +210,6 @@ __marimo__/
 backend/db/app.db
 backend/uploads/*
 samples/*
+!samples/.gitkeep
 logs/
 frontend/node_modules/*
