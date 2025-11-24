@@ -41,7 +41,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 logger = logging.getLogger("process.routes")
 
-# Job queue and worker pool
+# In-process job queue and worker pool (simple async workers)
 JOB_QUEUE: asyncio.Queue = asyncio.Queue()
 WORKER_TASKS = []
 DEFAULT_WORKER_COUNT = int(os.getenv("PROCESS_WORKER_COUNT", "2"))
@@ -67,6 +67,7 @@ def start_worker_pool(count: int = DEFAULT_WORKER_COUNT):
 
 
 async def _worker_loop(worker_id: int):
+    # Continuous worker that pulls jobs from JOB_QUEUE and processes them
     logger.info(f"Worker {worker_id} started")
     while True:
         job_id, file_path, filename, media_type = await JOB_QUEUE.get()
@@ -112,7 +113,7 @@ async def _worker_loop(worker_id: int):
 async def process_video(
     files: List[UploadFile] = File(...), db: Session = Depends(get_db)
 ):
-    """Accept multiple video files, create a processing job per file, and run processing in background tasks.
+    """Accept multiple video files, create a processing job per file, and enqueue background processing.
     Returns list of job ids which can be polled via `/process/status/{job_id}`.
     """
     if not files or len(files) == 0:
@@ -142,7 +143,7 @@ async def process_video(
 async def process_audio(
     files: List[UploadFile] = File(...), db: Session = Depends(get_db)
 ):
-    """Accept multiple audio files, create a processing job per file, and run processing in background tasks.
+    """Accept multiple audio files, create a processing job per file, and enqueue background processing.
     Returns list of job ids which can be polled via `/process/status/{job_id}`.
     """
     if not files or len(files) == 0:
@@ -231,6 +232,7 @@ async def get_job_status(job_id: int, db: Session = Depends(get_db)):
 
 
 def _create_job(db: Session, filename: str, media_type: str):
+    # Insert processing job row and return it
     job = ProcessingJobs(
         filename=filename, media_type=media_type, status="queued", progress=0
     )
@@ -247,6 +249,7 @@ def _update_job(
     result: object = None,
     error: str = None,
 ):
+    # Update job record in a new session (used by worker threads)
     session = SessionLocal()
     try:
         job = session.query(ProcessingJobs).filter(ProcessingJobs.id == job_id).first()
@@ -279,6 +282,7 @@ def _update_job(
 
 async def _process_video_background(job_id: int, file_path: str, filename: str):
     def sync_video_job():
+        # Synchronous video processing executed inside a background thread
         logger.info(f"[Job {job_id}] Starting video processing: {filename}")
         _update_job(job_id, status="processing", progress=5)
         db = SessionLocal()
@@ -453,6 +457,7 @@ async def _process_video_background(job_id: int, file_path: str, filename: str):
                 "keyframes": saved_keyframes,
                 "summary": summary,
             }
+            # Mark job done and attach result payload
             _update_job(job_id, status="done", progress=100, result=result)
             logger.info(f"[Job {job_id}] Video processing complete for {filename}")
 
@@ -471,6 +476,7 @@ async def _process_video_background(job_id: int, file_path: str, filename: str):
 
 async def _process_audio_background(job_id: int, file_path: str, filename: str):
     def sync_audio_job():
+        # Synchronous audio processing executed inside a background thread
         logger.info(f"[Job {job_id}] Starting audio processing: {filename}")
         _update_job(job_id, status="processing", progress=5)
         db = SessionLocal()

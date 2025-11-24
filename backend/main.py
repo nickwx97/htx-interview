@@ -14,6 +14,7 @@ except Exception:
     pass
 
 
+# FastAPI application entrypoint
 app = FastAPI(
     title="Multimedia Processing & Analysis API",
     description="API for processing and analyzing video and audio content.",
@@ -46,7 +47,7 @@ app.include_router(process_router)
 app.include_router(retrieve_router)
 app.include_router(search_router)
 
-# Serve uploaded media and generated assets
+# Serve uploaded media and generated assets from `uploads/`
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 
@@ -54,7 +55,7 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 from models.database import create_tables, SessionLocal, ProcessingJobs
 create_tables()
 
-# Resume unfinished jobs on startup
+# Resume unfinished jobs on startup (enqueue queued/processing jobs)
 import asyncio
 from routers.process.routes import schedule_job, start_worker_pool, UPLOAD_DIR
 import os
@@ -88,14 +89,13 @@ async def resume_unfinished_jobs():
 
 @asynccontextmanager
 async def lifespan(app):
-    # Run resume_unfinished_jobs at startup using the lifespan handler
-    # start worker pool then enqueue existing jobs
+    # Lifespan handler: start worker pool, then enqueue previously queued jobs
     start_worker_pool()
     await resume_unfinished_jobs()
     try:
         yield
     finally:
-        # Place for any shutdown cleanup if needed in future
+        # shutdown/cleanup can be added here if needed
         pass
 
 # Attach the lifespan context to the app (compatible with FastAPI/Starlette)

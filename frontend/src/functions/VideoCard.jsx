@@ -8,7 +8,7 @@ export default function VideoCard({ video, onSimilarImage }) {
     const [currentKeyframePage, setCurrentKeyframePage] = useState(1)
     const KEYFRAMES_PER_PAGE = 6
 
-    // Check and prepare keyframe URLs
+    // Prepare keyframe URLs and attempt to parse frame_idx from filename
     const keyframesWithAbsoluteUrls = keyframes.map(kf => {
         const url = kf.url.startsWith('http') ? kf.url : `${API_BASE}${kf.url}`
         // try to parse frame_idx from filename if provided by backend

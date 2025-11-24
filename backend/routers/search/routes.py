@@ -21,6 +21,7 @@ async def search(
     top_k: int = Query(10, ge=1, le=200),
     db: Session = Depends(get_db)
 ) -> Dict[str, Any]:
+    # If `db_id` provided, perform image-embedding similarity search using stored image embedding
     if db_id is not None:
         import numpy as np
 
@@ -78,6 +79,7 @@ async def search(
         results_sim = sorted(results_sim, key=lambda x: x["score"], reverse=True)[:top_k]
         return {"results": results_sim, "pagination": {"page": 1, "per_page": top_k, "total_count": len(results_sim), "total_pages": 1}}
 
+    # If `similar_text` flag set, compute text embedding for query and compare against audio segment embeddings
     if similar_text and q:
         import numpy as np
         try:
@@ -119,6 +121,7 @@ async def search(
         results_sim = sorted(results_sim, key=lambda x: x["score"], reverse=True)[:top_k]
         return {"results": results_sim, "pagination": {"page": 1, "per_page": top_k, "total_count": len(results_sim), "total_pages": 1}}
 
+    # Fallback: keyword search across filenames/transcriptions/detected_objects
     if not q:
         raise HTTPException(status_code=400, detail="query param 'q' is required for text search")
 

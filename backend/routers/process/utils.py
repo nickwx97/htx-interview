@@ -55,6 +55,7 @@ def _download_file(url: str, dst_path: str):
 
 
 def ensure_mobilenet_model():
+    # Ensure MobileNet model files exist locally (best-effort download)
     try:
         _download_file(MOBILENET_PROTOTXT_URL, MOBILENET_PROTOTXT)
     except Exception:
@@ -66,6 +67,8 @@ def ensure_mobilenet_model():
 
 
 def scene_keyframes(video_path: str, sample_rate: int = 5, diff_thresh: float = 30.0, output_dir: Optional[str] = None) -> List[Dict[str, Any]]:
+    # Extract representative keyframes by sampling and frame-difference thresholding.
+    # Returns list of dicts with `frame_idx`, `timestamp` and either `frame` or `frame_path`.
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise IOError("Cannot open video file")
@@ -133,6 +136,8 @@ def load_mobilenet_net():
 
 
 def detect_objects_on_image(net, image: np.ndarray, conf_thresh: float = 0.7, draw_boxes: bool = False):
+    # Run MobileNet-SSD on image and optionally draw boxes.
+    # Returns (annotated_image or original_image, results_list).
     (h, w) = image.shape[:2]
     blob = cv2.dnn.blobFromImage(cv2.resize(image, (300, 300)), 0.007843, (300, 300), 127.5)
     net.setInput(blob)
@@ -204,6 +209,7 @@ def load_embedding_model():
 
 
 def summarize_detections(detections_by_frame: List[Dict[str, Any]]):
+    # Aggregate detections across frames and compute per-label embeddings
     summary = {}
     for det in detections_by_frame:
         frame_ts = det["timestamp"]
@@ -224,6 +230,7 @@ def summarize_detections(detections_by_frame: List[Dict[str, Any]]):
 
 
 def serialize_embeddings(summary: List[Dict[str, Any]]) -> bytes:
+    # Serialize a list of label embeddings to a compressed numpy .npz blob
     arrs = {}
     for item in summary:
         label = item.get("label")
@@ -271,6 +278,7 @@ def load_whisper_model(model_name: str = "openai/whisper-tiny"):
 
             processor = AutoProcessor.from_pretrained(model_name)
 
+            # Return a dict containing model, processor and device info
             _whisper_model = {"model": model, "processor": processor, "device": device, "torch_dtype": torch_dtype}
             logger.info(f"Loaded Whisper model: {model_name} on device: {device}")
         except Exception:
@@ -390,6 +398,7 @@ def transcribe_audio(audio_path: str, model_name: str = "openai/whisper-tiny") -
 
 
 def generate_text_embeddings(text_segments: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    # Compute sentence-transformer embeddings for text segments
     try:
         embed_model = load_embedding_model()
         enriched_segments = []
@@ -413,6 +422,7 @@ def generate_text_embeddings(text_segments: List[Dict[str, Any]]) -> List[Dict[s
 
 
 def serialize_audio_embeddings(segments: List[Dict[str, Any]]) -> bytes:
+    # Serialize per-segment text embeddings plus metadata into a compressed blob
     try:
         arrs = {}
         metadata = {}
@@ -502,6 +512,7 @@ def generate_image_embedding(image: np.ndarray) -> List[float]:
         pil = Image.fromarray(rgb)
 
         model = load_image_embedding_model()
+        # Return a list embedding for the provided PIL image
         emb = model.encode(pil)
         return emb.tolist()
     except Exception:
@@ -510,6 +521,7 @@ def generate_image_embedding(image: np.ndarray) -> List[float]:
 
 
 def serialize_image_embedding(embedding: List[float], metadata: Dict[str, Any], key: str = "embedding") -> bytes:
+    # Serialize a single image embedding with metadata into a compressed blob
     try:
         arrs = {}
         arrs[key] = np.array(embedding, dtype=np.float32)

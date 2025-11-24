@@ -7,6 +7,7 @@ router = APIRouter(prefix="", tags=["retrieval"])
 
 
 def _video_keyframes_for_filename(filename: str):
+    # Return list of keyframe entries (filename, url, frame_idx) for a video's keyframe folder
     base = os.path.splitext(os.path.basename(filename))[0]
     uploads_dir = os.path.abspath(os.path.join(os.getcwd(), "uploads"))
     kf_dir = os.path.join(uploads_dir, f"{base}_keyframes")
@@ -32,6 +33,7 @@ def _video_keyframes_for_filename(filename: str):
 
 @router.get("/videos")
 async def retrieve_videos(db: Session = Depends(get_db)):
+    # Return grouped video rows with associated keyframe file URLs and latest summary
     rows = db.query(Videos).order_by(Videos.filename.asc(), Videos.frame_idx.asc(), Videos.created_at.asc()).all()
     groups = {}
     for r in rows:
@@ -88,6 +90,7 @@ async def retrieve_videos(db: Session = Depends(get_db)):
 
 @router.get("/transcriptions")
 async def retrieve_audios(db: Session = Depends(get_db)):
+    # Return grouped audio transcriptions per filename (latest first)
     rows = db.query(Audios).order_by(Audios.created_at.desc()).all()
     groups = {}
     for r in rows:

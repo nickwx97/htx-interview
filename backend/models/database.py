@@ -2,10 +2,12 @@ from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, i
 from sqlalchemy.orm import sessionmaker, declarative_base
 import datetime
 
+# SQLite engine used for local development; tuned pool args for light concurrency
 DATABASE_URL = "sqlite:///./db/app.db"
 engine = create_engine(DATABASE_URL, pool_pre_ping=True, pool_size=5, max_overflow=10)
 print(f"Using database URL: {DATABASE_URL}")
 
+# Session factory and declarative base for ORM models
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -57,10 +59,11 @@ class Audios(Base):
 
 # Create tables
 def create_tables():
+    # Ensure DB tables exist (idempotent)
     print("Creating database tables...")
     try:
         Base.metadata.create_all(bind=engine)
-        # Check created tables
+        # Log created tables for debugging
         inspector = inspect(engine)
         tables = inspector.get_table_names()
         print(f"Created tables: {tables}")
@@ -72,6 +75,7 @@ def create_tables():
 
 # get database session
 def get_db():
+    # Dependency for FastAPI endpoints: yields a DB session and closes it after use
     db = SessionLocal()
     try:
         yield db

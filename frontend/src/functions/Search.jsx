@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 
+// Backend API base URL for constructing absolute asset URLs
 const API_BASE = import.meta.env.VITE_API_BASE
 
 export function SearchVideoResult({ video }) {
@@ -174,6 +175,7 @@ export function SearchSimilarityResult({ result, onSimilarImage, onSimilarText }
 export function SearchSection({ isSearching, onSearch }) {
     const [searchQuery, setSearchQuery] = useState('')
 
+    // Invoke parent search handler when user submits
     const handleSearch = async () => {
         if (searchQuery.trim().length > 0) {
             onSearch(searchQuery, 1)

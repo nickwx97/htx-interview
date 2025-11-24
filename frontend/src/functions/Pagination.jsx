@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 
+// Simple pagination controls used across lists
 export default function PaginationControls({ pagination, currentPage, onPageChange, isLoading }) {
     if (!pagination) return null
 

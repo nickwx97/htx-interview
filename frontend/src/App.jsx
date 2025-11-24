@@ -6,6 +6,7 @@ import { SearchSimilarityResult, SearchSection, SearchVideoResult, SearchAudioRe
 import UploadForm from './functions/UploadForm';
 import VideoCard from './functions/VideoCard';
 
+// Backend API base URL (Vite env)
 const API_BASE = import.meta.env.VITE_API_BASE
 
 export default function App() {
@@ -40,6 +41,7 @@ export default function App() {
         } catch (err) { console.error(err); }
     }
 
+    // Run image similarity search by DB row id
     async function runImageSimilarity(db_id) {
         if (!db_id) return;
         try {
@@ -51,6 +53,7 @@ export default function App() {
         }
     }
 
+    // Run text similarity search using backend embedding endpoint
     async function runTextSimilarity(text) {
         try {
             const res = await axios.get(`${API_BASE}/search`, { params: { q: text, similar_text: true, top_k: 5 } });
@@ -98,6 +101,7 @@ export default function App() {
         };
     }
 
+    // Perform a text search via backend and store pagination
     async function handleSearch(query, page = 1) {
         if (!query.trim()) {
             setSearchResults([]);

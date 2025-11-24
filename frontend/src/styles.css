@@ -1061,6 +1061,36 @@ body {
   margin-top: 8px;
 }
 
+/* New classes moved from inline styles in UploadForm.jsx */
+.upload-form-fullwidth {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.jobs-section {
+  margin-top: 32px;
+}
+
+.jobs-pagination-row {
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-info {
+  margin: 0 12px;
+}
+
+.no-jobs-text {
+  color: #888;
+}
+
+/* Progress bar error state (overrides .progress-bar background) */
+.progress-bar.error {
+  background: #e25454;
+}
+
 .upload-item {
   display: flex;
   flex-direction: column;

@@ -42,6 +42,7 @@ export default function UploadForm({ onUploaded }) {
         }
     }
 
+    // Handle form submit: upload files then poll job statuses
     async function handleSubmit(e) {
         e.preventDefault()
         if (!filesList || filesList.length === 0) return
@@ -126,7 +127,7 @@ export default function UploadForm({ onUploaded }) {
                 <div>
                     <input type="file" multiple onChange={handleFilesChange} accept="video/*,audio/*" />
                 </div>
-                <div style={{ width: '100%', marginTop: 12 }}>
+                <div className="upload-form-fullwidth">
                     {filesList.length > 0 && (
                         <div className="upload-list">
                             {filesList.map((it, idx) => (
@@ -134,7 +135,7 @@ export default function UploadForm({ onUploaded }) {
                                     <div className="upload-filename">{it.file.name}</div>
                                     <div className="upload-progress-row">
                                         <div className="progress-track">
-                                            <div className="progress-bar" style={{ width: `${it.progress}%`, background: it.status === 'error' ? '#e25454' : '#4caf50' }} />
+                                            <div className={"progress-bar" + (it.status === 'error' ? ' error' : '')} style={{ width: `${it.progress}%` }} />
                                         </div>
                                         <div className="progress-meta">{it.progress}%</div>
                                     </div>
@@ -150,21 +151,21 @@ export default function UploadForm({ onUploaded }) {
             </form>
 
             {/* Persistent job list */}
-            <div style={{ marginTop: 32 }}>
+            <div className="jobs-section">
                 <h3>All Jobs (latest first)</h3>
-                <div style={{ marginBottom: 8 }}>
+                <div className="jobs-pagination-row">
                     <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}>Prev</button>
-                    <span style={{ margin: '0 12px' }}>Page {page} / {Math.max(1, Math.ceil((total || 0) / perPage))}</span>
+                    <span className="page-info">Page {page} / {Math.max(1, Math.ceil((total || 0) / perPage))}</span>
                     <button onClick={() => setPage(p => p + 1)} disabled={page >= Math.ceil((total || 0) / perPage)}>Next</button>
                 </div>
                 <div className="upload-list">
-                    {jobs.length === 0 && <div style={{ color: '#888' }}>No jobs on this page.</div>}
+                    {jobs.length === 0 && <div className="no-jobs-text">No jobs on this page.</div>}
                     {jobs.map(job => (
                         <div key={job.id} className="upload-item">
                             <div className="upload-filename">{job.filename}</div>
                             <div className="upload-progress-row">
                                 <div className="progress-track">
-                                    <div className="progress-bar" style={{ width: `${job.progress}%`, background: job.status === 'error' ? '#e25454' : '#4caf50' }} />
+                                    <div className={"progress-bar" + (job.status === 'error' ? ' error' : '')} style={{ width: `${job.progress}%` }} />
                                 </div>
                                 <div className="progress-meta">{job.progress}%</div>
                             </div>

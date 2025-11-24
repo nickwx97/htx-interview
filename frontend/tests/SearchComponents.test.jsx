@@ -1,3 +1,4 @@
+// Tests for search-related UI components
 import React from 'react'
 import { render, screen } from '@testing-library/react'
 import { SearchVideoResult, SearchAudioResult, SearchSimilarityResult } from '../src/functions/Search.jsx'

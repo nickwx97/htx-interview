@@ -8,7 +8,7 @@ export default function AudioCard({ audio, onSimilarText }) {
                 <div className="card-title">{audio.filename} {audio.id ? `(id: ${audio.id})` : ''}</div>
                 <div className="audio-rows">
                     {audio.rows.map(r => {
-                        // Parse timestamps to get start and end times
+                        // Parse timestamps to get start and end times (handles object or array formats)
                         let timeRange = 'N/A'
                         if (r.timestamps) {
                             try {
