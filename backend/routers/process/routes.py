@@ -131,6 +131,7 @@ async def process_video(
 
         # create job record
         job = _create_job(db, filename, "video")
+        logger.info(f"Triggered video processing job {job.id} for file: {filename}")
         jobs.append({"job_id": job.id, "filename": filename, "status": job.status})
 
         # schedule background processing via central queue
@@ -159,6 +160,7 @@ async def process_audio(
             shutil.copyfileobj(f.file, buffer)
 
         job = _create_job(db, filename, "audio")
+        logger.info(f"Triggered audio processing job {job.id} for file: {filename}")
         jobs.append({"job_id": job.id, "filename": filename, "status": job.status})
 
         schedule_job(job.id, file_path, filename, "audio")
@@ -472,6 +474,7 @@ async def _process_video_background(job_id: int, file_path: str, filename: str):
             db.close()
 
     await asyncio.to_thread(sync_video_job)
+    logger.info(f"[Job {job_id}] Video processing task completed or thread returned for {filename}")
 
 
 async def _process_audio_background(job_id: int, file_path: str, filename: str):
@@ -574,3 +577,4 @@ async def _process_audio_background(job_id: int, file_path: str, filename: str):
             db.close()
 
     await asyncio.to_thread(sync_audio_job)
+    logger.info(f"[Job {job_id}] Audio processing task completed or thread returned for {filename}")
