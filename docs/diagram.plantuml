@@ -1,0 +1,69 @@
+@startuml
+!theme aws-orange
+
+<style>
+document {
+  BackGroundColor white
+}
+root {
+  FontColor black
+  LineColor black
+}
+</style>
+
+actor User
+
+package "Frontend" {
+  [React App\n(`frontend/src`)] as FE
+}
+
+package "Backend" {
+  [FastAPI API Server\n(`backend/main.py`)] as BE
+  [In-process Job Queue\n(`routes/process/routes.py`: asyncio.Queue)] as Queue
+  [Processing Workers\n(in-process asyncio tasks)] as Workers
+}
+
+package "Storage & Metadata" {
+  [Local Uploads\n(`uploads/` served by FastAPI)] as Uploads
+  [SQLite Metadata DB\n(`backend/models/database.py`: `sqlite:///./db/app.db`)] as RDB
+}
+
+package "Embeddings Storage" {
+  [Embeddings stored as blobs\n(`Videos.embeddings`, `Audios.embeddings`)] as BlobStore
+}
+
+package "Video Pipeline" {
+  [scene_keyframes()\n(`routers/process/utils.py`)] as KF
+  [MobileNet SSD detection] as Det
+  [Image embedding (CLIP)] as ImgEmb
+}
+
+package "Audio Pipeline" {
+  [Whisper transcription] as ASR
+  [Text embeddings] as TxtEmb
+}
+
+' 1. User Interaction and API Flow
+User --> FE : upload / search
+FE --> BE : REST endpoints
+BE --> Queue : schedule_job()
+
+' 2. Processing and Pipelining Flow (Queue -> Workers -> Pipelines)
+Queue --> Workers : _worker_loop()
+Workers --> KF : Extract Keyframes
+Workers --> ASR : Transcribe Audio
+
+KF --> Det : detect_objects
+Det --> ImgEmb : generate_image_embedding
+
+ASR --> TxtEmb : generate_text_embeddings
+
+' 3. Data Persistence Flow (Workers/Pipelines -> Storage)
+ImgEmb --> BlobStore : save image embedding
+TxtEmb --> BlobStore : save text embedding
+
+BE --> RDB : metadata insert/query
+BE -[hidden]down-> RDB
+BE -down-> Uploads : static serve keyframes
+
+@enduml

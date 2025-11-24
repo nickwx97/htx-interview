@@ -5,14 +5,15 @@ Lightweight prototype for media processing, retrieval and search. The project co
 **Contents**
 - `backend/` — FastAPI app, processing pipeline, models and DB.
 - `frontend/` — Vite + React UI.
-- `samples/` — sample media used by tests.
+- `docs/` — architecture diagrams and supporting docs (`architecture.pdf` is here).
+- `samples/` — sample media used by tests (large files not pushed to GitHub, supplement with interview package provided).
 
-**Quick summary**
+**Brief Overview**
 - Backend: FastAPI app in `backend/main.py` with routers under `backend/routers/`.
 - Processing: helpers in `backend/routers/process/utils.py` perform keyframe extraction, MobileNet-SSD detection, Whisper transcription, and embedding creation (`sentence-transformers`).
 - Storage: SQLite DB defined in `backend/models/database.py`. Embeddings and binary blobs are stored in `LargeBinary` columns as compressed numpy archives.
 
-**Key conventions**
+**Key Conventions**
 - Keyframes are saved as `kf_<frame_idx>.jpg` under `uploads/<video>_keyframes/`.
 - MobileNet model files expected at `backend/models/MobileNetSSD_deploy.prototxt` and `backend/models/mobilenet_iter_73000.caffemodel` (the code will attempt to download them if missing).
 
