@@ -205,3 +205,11 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Database files
+backend/db/app.db
+backend/uploads/*
+samples/*
+!samples/.gitkeep
+logs/
+frontend/node_modules/*
